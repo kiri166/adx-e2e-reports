@@ -1,0 +1,69 @@
+
+──────── reset-abtest-env ────────
+== clearing experiments + tenant domains ==
+TRUNCATE TABLE
+DELETE 0
+DELETE 0
+== ensuring platform baseline layers (policy_filter + dsp_recall) ==
+INSERT 0 1
+== re-syncing id sequences ==
+baseline domains: platform:t0
+baseline layers:  policy_filter, dsp_recall
+== forcing a clean snapshot republish (throwaway create+archive) ==
+PASS: abtest env reset to baseline; clean snapshot republished
+
+──────── playwright backend suite ────────
+
+Running 7 tests using 1 worker
+
+[1A[2K[1/7] [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant
+[1A[2K[2/7] [backend] › e2e/abtest-engine-loop.api.spec.ts:202:3 › ABTest engine closed-loop › valid OpenRTB /rtb request is accepted (not rejected at the protocol door)
+[1A[2K[3/7] [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent
+[1A[2K[4/7] [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution
+[1A[2K[5/7] [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes
+[1A[2K[6/7] [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers
+[1A[2K[7/7] [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant
+[1A[2K  7 passed (28.7s)
+
+──────── verify-rtb-exposure ────────
+seeded RUNNING experiment id=8
+debug resolve: diversion=rtb-expose-5 -> experiment=8 variant=15 (control) bucket=363
+POST /rtb -> HTTP 204
+abtestSnapshotVersion: 16
+experimentExposures: [{"experimentId": "8", "variantId": "15", "layerKey": "policy_filter", "variantName": "control", "bucket": 363}]
+PASS: real /rtb request recorded exposure variant=15 exp=8 at snapshot v16
+
+──────── setup-dsp-mock ────────
+== skipping mock-dsp deploy (DEPLOY_DSP=0; assuming ArgoCD-managed mock-dsp) ==
+== pointing the SOURCE (portal Postgres dsps) at the mock ==
+  UPDATE 1
+== writing the engine Mongo + bumping updated_time (immediate reload) ==
+engine dsps endpoint -> http://mock-dsp.dev-ci-manual-26765063003.svc:8081/bid
+== waiting for the engine to reload the DSP endpoint (real /rtb fills) ==
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+PASS: mock-dsp wired persistently (portal source + engine Mongo → http://mock-dsp.dev-ci-manual-26765063003.svc:8081/bid); engine reloads within ~60s, no restart
+
+──────── verify-dsp-win ────────
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+FAIL: /rtb never filled (got 204) — is the bidding DSP deployed + DSP row pointed at it + engine restarted?
+── SKIP verify-trace-attrs: no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger
+
+════════ summary ════════
+  PASS  reset-abtest-env
+  PASS  playwright backend suite
+  PASS  verify-rtb-exposure
+  FAIL  verify-dsp-win
+  SKIP  verify-trace-attrs (no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger)
+═════════════════════════
+1 step(s) FAILED
