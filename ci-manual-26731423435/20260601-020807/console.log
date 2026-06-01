@@ -1,0 +1,246 @@
+
+──────── reset-abtest-env ────────
+== clearing experiments + tenant domains ==
+TRUNCATE TABLE
+DELETE 0
+DELETE 0
+== ensuring platform baseline layers (policy_filter + dsp_recall) ==
+INSERT 0 1
+== re-syncing id sequences ==
+baseline domains: platform:t0
+baseline layers:  policy_filter, dsp_recall
+== forcing a clean snapshot republish (throwaway create+archive) ==
+PASS: abtest env reset to baseline; clean snapshot republished
+
+──────── playwright backend suite ────────
+
+Running 7 tests using 1 worker
+
+[1A[2K[1/7] [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant
+[1A[2K  1) [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant 
+
+    Error: portal must actually publish to Apollo (published=true), not silently no-op
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      143 |     // not just been built in memory. published=false here means the portal lacks
+      144 |     // APOLLO_OPEN_API_TOKEN and the engine will never see it — fail loudly.
+    > 145 |     expect(actuallyPublished, 'portal must actually publish to Apollo (published=true), not silently no-op').toBeTruthy();
+          |                                                                                                              ^
+      146 |
+      147 |     // ── Layer 1 (core seam): engine must load that snapshot from Apollo ──
+      148 |     const resolveOnce = async (diversion: string) => {
+        at /app/e2e/abtest-engine-loop.api.spec.ts:145:110
+
+    Error Context: test-results/abtest-engine-loop.api-ABT-39cd5--the-bucket-correct-variant-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-engine-loop.api-ABT-39cd5--the-bucket-correct-variant-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-engine-loop.api-ABT-39cd5--the-bucket-correct-variant-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/7] [backend] › e2e/abtest-engine-loop.api.spec.ts:202:3 › ABTest engine closed-loop › valid OpenRTB /rtb request is accepted (not rejected at the protocol door)
+[1A[2K[3/7] [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent
+[1A[2K  2) [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent 
+
+    Error: golden set must collect ≥1 diversion that resolves our experiment
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      266 |       else if (i === 0) await new Promise((res) => setTimeout(res, 2000)); // brief warmup on a cold engine
+      267 |     }
+    > 268 |     expect(golden.length, 'golden set must collect ≥1 diversion that resolves our experiment').toBeGreaterThan(0);
+          |                                                                                                ^
+      269 |
+      270 |     // determinism (same input → same variant+bucket across calls) + bucket in-slice
+      271 |     for (const g of golden) {
+        at /app/e2e/abtest-engine-loop.api.spec.ts:268:96
+
+    Error Context: test-results/abtest-engine-loop.api-ABT-ba4e2-istic-and-bucket-consistent-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-engine-loop.api-ABT-ba4e2-istic-and-bucket-consistent-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-engine-loop.api-ABT-ba4e2-istic-and-bucket-consistent-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/7] [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution
+[1A[2K  3) [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution 
+
+    Error: should find a diversion landing in our slice
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mnull[39m
+
+      134 |     }
+      135 |     const div = await findDiversionForExperiment(request, id);
+    > 136 |     expect(div, 'should find a diversion landing in our slice').toBeTruthy();
+          |                                                                 ^
+      137 |
+      138 |     // pause → snapshot rebuild zeroes the bucket → engine resolves no variant for us
+      139 |     const pr = await request.post(`${baseURL}${API}/abtest/experiments/${id}/pause`, { headers: auth, data: { reason: 'e2e' } });
+        at /app/e2e/abtest-scenarios.api.spec.ts:136:65
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-68202-ment-from-engine-resolution-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-68202-ment-from-engine-resolution-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-68202-ment-from-engine-resolution-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[5/7] [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes
+[1A[2K  4) [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes 
+
+    Error: should find a USA diversion in our slice
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mnull[39m
+
+      178 |       if (v && String(v.experiment_id) === String(id)) div = `scope-${id}-${i}`;
+      179 |     }
+    > 180 |     expect(div, 'should find a USA diversion in our slice').toBeTruthy();
+          |                                                             ^
+      181 |
+      182 |     // same diversion with a NON-matching country must NOT resolve our experiment
+      183 |     const miss = await resolve(request, { diversion_id: div!, country: 'JPN' });
+        at /app/e2e/abtest-scenarios.api.spec.ts:180:61
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-ec836-ution-by-request-attributes-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-ec836-ution-by-request-attributes-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-ec836-ution-by-request-attributes-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[6/7] [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers
+[1A[2K  5) [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers 
+
+    Error: should find a diversion resolving our experiment on both policy_filter and dsp_recall
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mnull[39m
+
+      254 |       if (onPf && onDr) both = { onPf, onDr };
+      255 |     }
+    > 256 |     expect(both, `should find a diversion resolving our experiment on both ${LAYER} and ${LAYER2}`).toBeTruthy();
+          |                                                                                                     ^
+      257 |     expect(both.onDr.variant_name).toBe('treatment');
+      258 |   });
+      259 |
+        at /app/e2e/abtest-scenarios.api.spec.ts:256:101
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-67152-ants-across-multiple-layers-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-67152-ants-across-multiple-layers-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-67152-ants-across-multiple-layers-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/7] [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant
+[1A[2K  6) [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant 
+
+    Error: tenant-5 request should resolve the tenant-5 experiment
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mnull[39m
+
+      325 |       if (!t5.mine) await new Promise((r) => setTimeout(r, 2000));
+      326 |     }
+    > 327 |     expect(t5?.mine, 'tenant-5 request should resolve the tenant-5 experiment').toBeTruthy();
+          |                                                                                 ^
+      328 |     expect(t5.domainId, 'tenant-5 must route to the tenant-5 domain').toBe(String(t5Dom.id));
+      329 |
+      330 |     // STRICT isolation — platform and tenants are mutually invisible:
+        at /app/e2e/abtest-scenarios.api.spec.ts:327:81
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-56ce5-nly-for-the-matching-tenant-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-56ce5-nly-for-the-matching-tenant-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-56ce5-nly-for-the-matching-tenant-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  6 failed
+    [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant 
+    [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant 
+  1 passed (4.1m)
+
+──────── verify-rtb-exposure ────────
+seeded RUNNING experiment id=8
+debug resolve: diversion=rtb-expose-1 -> experiment=1 variant=2 (treatment_rpr_off) bucket=8208
+POST /rtb -> HTTP 204
+abtestSnapshotVersion: 3
+experimentExposures: [{"experimentId": "1", "variantId": "2", "layerKey": "policy_filter", "variantName": "treatment_rpr_off", "bucket": 8208}]
+PASS: real /rtb request recorded exposure variant=2 exp=1 at snapshot v3
+
+──────── setup-dsp-mock ────────
+== skipping mock-dsp deploy (DEPLOY_DSP=0; assuming ArgoCD-managed mock-dsp) ==
+== pointing the SOURCE (portal Postgres dsps) at the mock ==
+  UPDATE 1
+== writing the engine Mongo + bumping updated_time (immediate reload) ==
+engine dsps endpoint -> http://mock-dsp.dev-ci-manual-26731423435.svc:8081/bid
+== waiting for the engine to reload the DSP endpoint (real /rtb fills) ==
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+PASS: mock-dsp wired persistently (portal source + engine Mongo → http://mock-dsp.dev-ci-manual-26731423435.svc:8081/bid); engine reloads within ~60s, no restart
+
+──────── verify-dsp-win ────────
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+FAIL: /rtb never filled (got 204) — is the bidding DSP deployed + DSP row pointed at it + engine restarted?
+── SKIP verify-trace-attrs: no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger
+
+════════ summary ════════
+  PASS  reset-abtest-env
+  FAIL  playwright backend suite
+  PASS  verify-rtb-exposure
+  FAIL  verify-dsp-win
+  SKIP  verify-trace-attrs (no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger)
+═════════════════════════
+2 step(s) FAILED
