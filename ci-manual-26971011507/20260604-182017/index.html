@@ -1,0 +1,116 @@
+<!doctype html><meta charset="utf-8"><title>E2E ci-manual-26971011507 20260604-182017</title>
+<style>body{font:14px -apple-system,system-ui,sans-serif;max-width:880px;margin:40px auto;padding:0 16px}
+table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #eee;padding:6px 10px}
+.h{color:#fff;padding:14px 18px;border-radius:8px;font-size:18px}.ok{background:#1f9d55}.bad{background:#cc1f1a}
+a{color:#2b6cb0}pre{background:#f6f8fa;padding:12px;border-radius:8px;overflow:auto;max-height:60vh}</style>
+<div class="h bad">
+  ❌ E2E FAILED · ci-manual-26971011507 · 20260604-182017</div>
+<p><b>branch</b>: main &nbsp; <b>namespace</b>: dev-ci-manual-26971011507</p>
+
+<table></table>
+<h3>Console</h3><pre>
+──────── reset-abtest-env ────────
+== clearing experiments + tenant domains ==
+TRUNCATE TABLE
+DELETE 0
+DELETE 0
+== ensuring platform baseline layers (policy_filter + dsp_recall) ==
+INSERT 0 1
+== re-syncing id sequences ==
+baseline domains: platform:t0
+baseline layers:  policy_filter, dsp_recall
+== forcing a clean snapshot republish (throwaway create+archive) ==
+PASS: abtest env reset to baseline; clean snapshot republished
+
+──────── wait-engine-warm ────────
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -&gt; 204; waiting for engine to load exchange/dsp/snapshot...
+  WARN: engine still not warm after 150s — proceeding (downstream steps may fail)
+
+──────── playwright backend suite ────────
+
+Running 7 tests using 1 worker
+
+  ✓  1 [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot &amp; assigns the bucket-correct variant (4.0s)
+  ✓  2 [backend] › e2e/abtest-engine-loop.api.spec.ts:202:3 › ABTest engine closed-loop › valid OpenRTB /rtb request is accepted (not rejected at the protocol door) (7ms)
+  ✓  3 [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent (4.7s)
+  ✓  4 [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution (7.4s)
+  ✓  5 [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes (3.9s)
+  ✓  6 [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers (3.9s)
+  ✓  7 [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant (4.0s)
+
+  7 passed (28.7s)
+
+──────── verify-rtb-exposure ────────
+seeded RUNNING experiment id=8
+debug resolve: diversion=rtb-expose-5 -&gt; experiment=8 variant=15 (control) bucket=363
+POST /rtb -&gt; HTTP 204
+abtestSnapshotVersion: 16
+experimentExposures: [{&quot;experimentId&quot;: &quot;8&quot;, &quot;variantId&quot;: &quot;15&quot;, &quot;layerKey&quot;: &quot;policy_filter&quot;, &quot;variantName&quot;: &quot;control&quot;, &quot;bucket&quot;: 363}]
+PASS: real /rtb request recorded exposure variant=15 exp=8 at snapshot v16
+
+──────── setup-dsp-mock ────────
+== skipping mock-dsp deploy (DEPLOY_DSP=0; assuming ArgoCD-managed mock-dsp) ==
+== pointing the SOURCE (portal Postgres dsps) at the mock ==
+  UPDATE 1
+== writing the engine Mongo + bumping updated_time (immediate reload) ==
+engine dsps endpoint -&gt; http://mock-dsp.dev-ci-manual-26971011507.svc:8081/bid
+== waiting for the engine to reload the DSP endpoint (real /rtb fills) ==
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+  /rtb -&gt; 204; waiting for reload...
+PASS: mock-dsp wired persistently (portal source + engine Mongo → http://mock-dsp.dev-ci-manual-26971011507.svc:8081/bid); engine reloads within ~60s, no restart
+
+──────── verify-dsp-win ────────
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+POST /rtb -&gt; HTTP 204
+FAIL: /rtb never filled (got 204) — is the bidding DSP deployed + DSP row pointed at it + engine restarted?
+── SKIP verify-trace-attrs: no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger
+
+════════ summary ════════
+  PASS  reset-abtest-env
+  PASS  playwright backend suite
+  PASS  verify-rtb-exposure
+  FAIL  verify-dsp-win
+  SKIP  verify-trace-attrs (no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger)
+═════════════════════════
+wrote /tmp/e2e-report/summary.json
+1 step(s) FAILED</pre>
