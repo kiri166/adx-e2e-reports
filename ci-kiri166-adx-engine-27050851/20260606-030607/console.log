@@ -1,0 +1,328 @@
+
+──────── reset-abtest-env ────────
+== clearing experiments + tenant domains ==
+TRUNCATE TABLE
+DELETE 0
+DELETE 0
+== ensuring platform baseline layers (policy_filter + dsp_recall) ==
+INSERT 0 1
+== re-syncing id sequences ==
+baseline domains: platform:t0
+baseline layers:  policy_filter, dsp_recall
+== forcing a clean snapshot republish (throwaway create+archive) ==
+curl: (7) Failed to connect to portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc port 80 after 2 ms: Couldn't connect to server
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/usr/lib/python3.11/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+──────── wait-engine-warm ────────
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  /rtb -> 204; waiting for engine to load exchange/dsp/snapshot...
+  WARN: engine still not warm after 150s — proceeding (downstream steps may fail)
+
+──────── playwright backend suite ────────
+
+Running 7 tests using 1 worker
+
+  ✘  1 [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant (52ms)
+  ✓  2 [backend] › e2e/abtest-engine-loop.api.spec.ts:202:3 › ABTest engine closed-loop › valid OpenRTB /rtb request is accepted (not rejected at the protocol door) (26ms)
+  ✘  3 [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent (53ms)
+  ✘  4 [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution (49ms)
+  ✘  5 [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes (28ms)
+  ✘  6 [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers (30ms)
+  ✘  7 [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant (30ms)
+
+
+  1) [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant 
+
+    Error: apiRequestContext.post: connect ECONNREFUSED 10.43.181.109:80
+    Call log:
+    [2m  - → POST http://portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc/api/v1/auth/login[22m
+    [2m    - user-agent: Playwright/1.60.0 (x64; debian 12) node/20.20[22m
+    [2m    - accept: */*[22m
+    [2m    - accept-encoding: gzip,deflate,br[22m
+    [2m    - content-type: application/json[22m
+    [2m    - content-length: 42[22m
+
+
+      23 |
+      24 | async function apiLogin(request: APIRequestContext, baseURL: string): Promise<string> {
+    > 25 |   const res = await request.post(`${baseURL}${API}/auth/login`, { data: { username: USER, password: PASS } });
+         |                             ^
+      26 |   expect(res.ok(), `login: ${res.status()} ${await res.text()}`).toBeTruthy();
+      27 |   const body = await res.json();
+      28 |   return body?.data?.token ?? body?.token;
+        at apiLogin (/app/e2e/abtest-engine-loop.api.spec.ts:25:29)
+        at /app/e2e/abtest-engine-loop.api.spec.ts:78:25
+
+    Error Context: test-results/abtest-engine-loop.api-ABT-39cd5--the-bucket-correct-variant-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-engine-loop.api-ABT-39cd5--the-bucket-correct-variant-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-engine-loop.api-ABT-39cd5--the-bucket-correct-variant-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent 
+
+    Error: apiRequestContext.post: connect ECONNREFUSED 10.43.181.109:80
+    Call log:
+    [2m  - → POST http://portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc/api/v1/auth/login[22m
+    [2m    - user-agent: Playwright/1.60.0 (x64; debian 12) node/20.20[22m
+    [2m    - accept: */*[22m
+    [2m    - accept-encoding: gzip,deflate,br[22m
+    [2m    - content-type: application/json[22m
+    [2m    - content-length: 42[22m
+
+
+      23 |
+      24 | async function apiLogin(request: APIRequestContext, baseURL: string): Promise<string> {
+    > 25 |   const res = await request.post(`${baseURL}${API}/auth/login`, { data: { username: USER, password: PASS } });
+         |                             ^
+      26 |   expect(res.ok(), `login: ${res.status()} ${await res.text()}`).toBeTruthy();
+      27 |   const body = await res.json();
+      28 |   return body?.data?.token ?? body?.token;
+        at apiLogin (/app/e2e/abtest-engine-loop.api.spec.ts:25:29)
+        at /app/e2e/abtest-engine-loop.api.spec.ts:230:25
+
+    Error Context: test-results/abtest-engine-loop.api-ABT-ba4e2-istic-and-bucket-consistent-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-engine-loop.api-ABT-ba4e2-istic-and-bucket-consistent-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-engine-loop.api-ABT-ba4e2-istic-and-bucket-consistent-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution 
+
+    Error: apiRequestContext.post: connect ECONNREFUSED 10.43.181.109:80
+    Call log:
+    [2m  - → POST http://portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc/api/v1/auth/login[22m
+    [2m    - user-agent: Playwright/1.60.0 (x64; debian 12) node/20.20[22m
+    [2m    - accept: */*[22m
+    [2m    - accept-encoding: gzip,deflate,br[22m
+    [2m    - content-type: application/json[22m
+    [2m    - content-length: 42[22m
+
+
+      12 |
+      13 | async function apiLogin(request: APIRequestContext, baseURL: string): Promise<string> {
+    > 14 |   const res = await request.post(`${baseURL}${API}/auth/login`, { data: { username: USER, password: PASS } });
+         |                             ^
+      15 |   expect(res.ok(), `login: ${res.status()} ${await res.text()}`).toBeTruthy();
+      16 |   const b = await res.json();
+      17 |   return b?.data?.token ?? b?.token;
+        at apiLogin (/app/e2e/abtest-scenarios.api.spec.ts:14:29)
+        at /app/e2e/abtest-scenarios.api.spec.ts:118:25
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-68202-ment-from-engine-resolution-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-68202-ment-from-engine-resolution-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-68202-ment-from-engine-resolution-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes 
+
+    Error: apiRequestContext.post: connect ECONNREFUSED 10.43.181.109:80
+    Call log:
+    [2m  - → POST http://portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc/api/v1/auth/login[22m
+    [2m    - user-agent: Playwright/1.60.0 (x64; debian 12) node/20.20[22m
+    [2m    - accept: */*[22m
+    [2m    - accept-encoding: gzip,deflate,br[22m
+    [2m    - content-type: application/json[22m
+    [2m    - content-length: 42[22m
+
+
+      12 |
+      13 | async function apiLogin(request: APIRequestContext, baseURL: string): Promise<string> {
+    > 14 |   const res = await request.post(`${baseURL}${API}/auth/login`, { data: { username: USER, password: PASS } });
+         |                             ^
+      15 |   expect(res.ok(), `login: ${res.status()} ${await res.text()}`).toBeTruthy();
+      16 |   const b = await res.json();
+      17 |   return b?.data?.token ?? b?.token;
+        at apiLogin (/app/e2e/abtest-scenarios.api.spec.ts:14:29)
+        at /app/e2e/abtest-scenarios.api.spec.ts:156:25
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-ec836-ution-by-request-attributes-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-ec836-ution-by-request-attributes-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-ec836-ution-by-request-attributes-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers 
+
+    Error: apiRequestContext.post: connect ECONNREFUSED 10.43.181.109:80
+    Call log:
+    [2m  - → POST http://portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc/api/v1/auth/login[22m
+    [2m    - user-agent: Playwright/1.60.0 (x64; debian 12) node/20.20[22m
+    [2m    - accept: */*[22m
+    [2m    - accept-encoding: gzip,deflate,br[22m
+    [2m    - content-type: application/json[22m
+    [2m    - content-length: 42[22m
+
+
+      12 |
+      13 | async function apiLogin(request: APIRequestContext, baseURL: string): Promise<string> {
+    > 14 |   const res = await request.post(`${baseURL}${API}/auth/login`, { data: { username: USER, password: PASS } });
+         |                             ^
+      15 |   expect(res.ok(), `login: ${res.status()} ${await res.text()}`).toBeTruthy();
+      16 |   const b = await res.json();
+      17 |   return b?.data?.token ?? b?.token;
+        at apiLogin (/app/e2e/abtest-scenarios.api.spec.ts:14:29)
+        at /app/e2e/abtest-scenarios.api.spec.ts:198:25
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-67152-ants-across-multiple-layers-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-67152-ants-across-multiple-layers-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-67152-ants-across-multiple-layers-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant 
+
+    Error: apiRequestContext.post: connect ECONNREFUSED 10.43.181.109:80
+    Call log:
+    [2m  - → POST http://portal-frontend.dev-ci-kiri166-adx-engine-27050851.svc/api/v1/auth/login[22m
+    [2m    - user-agent: Playwright/1.60.0 (x64; debian 12) node/20.20[22m
+    [2m    - accept: */*[22m
+    [2m    - accept-encoding: gzip,deflate,br[22m
+    [2m    - content-type: application/json[22m
+    [2m    - content-length: 42[22m
+
+
+      12 |
+      13 | async function apiLogin(request: APIRequestContext, baseURL: string): Promise<string> {
+    > 14 |   const res = await request.post(`${baseURL}${API}/auth/login`, { data: { username: USER, password: PASS } });
+         |                             ^
+      15 |   expect(res.ok(), `login: ${res.status()} ${await res.text()}`).toBeTruthy();
+      16 |   const b = await res.json();
+      17 |   return b?.data?.token ?? b?.token;
+        at apiLogin (/app/e2e/abtest-scenarios.api.spec.ts:14:29)
+        at /app/e2e/abtest-scenarios.api.spec.ts:267:25
+
+    Error Context: test-results/abtest-scenarios.api-ABTes-56ce5-nly-for-the-matching-tenant-backend/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/abtest-scenarios.api-ABTes-56ce5-nly-for-the-matching-tenant-backend/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/abtest-scenarios.api-ABTes-56ce5-nly-for-the-matching-tenant-backend/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [backend] › e2e/abtest-engine-loop.api.spec.ts:76:3 › ABTest engine closed-loop › engine loads published snapshot & assigns the bucket-correct variant 
+    [backend] › e2e/abtest-engine-loop.api.spec.ts:227:3 › ABTest engine closed-loop › golden set: variant assignment is deterministic and bucket-consistent 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:116:3 › ABTest engine scenarios › pause removes the experiment from engine resolution 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:154:3 › ABTest engine scenarios › scope_expression gates resolution by request attributes 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:196:3 › ABTest engine scenarios › one experiment resolves variants across multiple layers 
+    [backend] › e2e/abtest-scenarios.api.spec.ts:265:3 › ABTest engine scenarios › multi-tenant domain isolation resolves only for the matching tenant 
+  1 passed (3.3s)
+
+──────── verify-rtb-exposure ────────
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/usr/lib/python3.11/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+──────── setup-dsp-mock ────────
+== skipping mock-dsp deploy (DEPLOY_DSP=0; assuming ArgoCD-managed mock-dsp) ==
+== pointing the SOURCE (portal Postgres dsps) at the mock ==
+  UPDATE 1
+== writing the engine Mongo + bumping updated_time (immediate reload) ==
+engine dsps endpoint -> http://mock-dsp.dev-ci-kiri166-adx-engine-27050851.svc:8081/bid
+== waiting for the engine to reload the DSP endpoint (real /rtb fills) ==
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+  /rtb -> 204; waiting for reload...
+PASS: mock-dsp wired persistently (portal source + engine Mongo → http://mock-dsp.dev-ci-kiri166-adx-engine-27050851.svc:8081/bid); engine reloads within ~60s, no restart
+
+──────── verify-dsp-win ────────
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+POST /rtb -> HTTP 204
+FAIL: /rtb never filled (got 204) — is the bidding DSP deployed + DSP row pointed at it + engine restarted?
+── SKIP verify-trace-attrs: no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger
+
+════════ summary ════════
+  FAIL  reset-abtest-env
+  FAIL  playwright backend suite
+  FAIL  verify-rtb-exposure
+  FAIL  verify-dsp-win
+  SKIP  verify-trace-attrs (no jaeger-collector svc in ns e2e-trace — kubectl apply -f e2e/jaeger-e2e.yaml + enable engine jaeger)
+═════════════════════════
+wrote /tmp/e2e-report/summary.json
+4 step(s) FAILED
